@@ -1,7 +1,7 @@
 from typing import Optional
-# from app.core.logger import get_logger
+from core.logger import get_logger
 
-# logger = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 def chunk_text(
@@ -59,10 +59,10 @@ def chunk_text(
         if start <= 0 and chunk_index > 0:
             break
 
-    #logger.info(
-    #    f"Chunked doc '{doc_id}' → {len(chunks)} chunks "
-    #    f"(size={chunk_size}, overlap={chunk_overlap})"
-    #)
+    logger.info(
+        f"Chunked doc '{doc_id}' → {len(chunks)} chunks "
+        f"(size={chunk_size}, overlap={chunk_overlap})"
+    )
 
     return chunks
 
@@ -100,10 +100,10 @@ def chunk_pages(
             all_chunks.append(chunk)
             global_index += 1
 
-    #logger.info(
-    #    f"Page-chunked doc '{doc_id}' → {len(all_chunks)} total chunks "
-    #    f"across {len(pages)} pages"
-    #)
+    logger.info(
+        f"Page-chunked doc '{doc_id}' → {len(all_chunks)} total chunks "
+        f"across {len(pages)} pages"
+    )
 
     return all_chunks
 

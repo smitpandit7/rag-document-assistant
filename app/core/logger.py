@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
-from app.core.config import settings
+from core.config import LOG_LEVEL , LOG_DIR
 
 # Avoid adding duplicate handlers if get_logger() is called multiple times
 _configured_loggers: set[str] = set()
@@ -28,7 +28,7 @@ def get_logger(name: str) -> logging.Logger:
     if name in _configured_loggers:
         return logger
 
-    logger.setLevel(getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO))
+    logger.setLevel(getattr(logging, LOG_LEVEL.upper(), logging.INFO))
 
     formatter = logging.Formatter(
         fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
@@ -42,7 +42,7 @@ def get_logger(name: str) -> logging.Logger:
 
     # ── Rotating file handler ─────────────────────────────────────────────
     # Max 5MB per file, keep last 3 files → max 15MB of logs total
-    log_path = Path(settings.LOG_DIR) / "app.log"
+    log_path = Path(LOG_DIR) / "app.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     file_handler = RotatingFileHandler(

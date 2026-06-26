@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
-from app.core.config import EMBEDDING_MODEL
-from app.core.logger import get_logger
+from core.config import EMBEDDING_MODEL
+from core.logger import get_logger
 
 logger = get_logger(__name__)
 
