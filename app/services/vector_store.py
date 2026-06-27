@@ -1,7 +1,7 @@
 import chromadb
 from chromadb.config import Settings as ChromaSettings
-from core.config import CHROMA_DB_PATH
-from core.logger import get_logger
+from app.core.config import CHROMA_DB_PATH
+from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 

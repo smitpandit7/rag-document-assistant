@@ -2,7 +2,7 @@ import logging
 import sys
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
-from core.config import LOG_LEVEL , LOG_DIR
+from app.core.config import LOG_LEVEL , LOG_DIR
 
 # Avoid adding duplicate handlers if get_logger() is called multiple times
 _configured_loggers: set[str] = set()

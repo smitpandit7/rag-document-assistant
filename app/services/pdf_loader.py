@@ -1,9 +1,9 @@
 import fitz  # PyMuPDF
 import os
 from pathlib import Path
-#from app.core.logger import get_logger
+from app.core.logger import get_logger
 
-#logger = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 def extract_text_from_pdf(file_path: str) -> dict:
@@ -16,7 +16,7 @@ def extract_text_from_pdf(file_path: str) -> dict:
     if path.suffix.lower() != ".pdf":
         raise ValueError(f"Expected a .pdf file, got: {path.suffix}")
 
-    #logger.info(f"Opening PDF: {path.name}")
+    logger.info(f"Opening PDF: {path.name}")
 
     try:
         doc = fitz.open(str(path))

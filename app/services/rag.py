@@ -24,10 +24,10 @@ Flow:
 """
 
 from groq import Groq
-from core.config import GROQ_API_KEY, GROQ_MODEL
-from core.logger import get_logger
-from services.embedding import embed_single
-from services.vector_store import query_chunks
+from app.core.config import GROQ_API_KEY, GROQ_MODEL
+from app.core.logger import get_logger
+from app.services.embedding import embed_single
+from app.services.vector_store import query_chunks
 
 logger = get_logger(__name__)
 
@@ -237,6 +237,8 @@ Rules:
 3. Cite your sources inline using [Context N] references (e.g. "According to [Context 1], ...").
 4. Be concise, accurate, and helpful.
 5. If multiple contexts support the answer, reference all of them.
+6. Do not mention "Context 1", "Context 2", or similar labels in your answer.
+7. At the end of the answer, naturally mention the source file and page if appropriate.
 
 {history_section}## Retrieved Context
 {context_block}
