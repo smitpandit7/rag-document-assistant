@@ -1,22 +1,31 @@
-# Database
-users.db
-*.db
-
-# ChromaDB
-chroma_db/
-
-# Environment
-.env
+# Virtual Environment
 venv/
 .venv/
 
-# Python
+# Environment Variables
+.env
+
+# Python Cache
 __pycache__/
-*.pyc
+*.py[cod]
+
+# VS Code
+.vscode/
 
 # Logs
 logs/
 *.log
 
-# VS Code
-.vscode/
+# ChromaDB Database
+chroma_db/
+
+# Uploaded PDFs
+uploads/
+
+# SQLite Databases
+*.db
+*.sqlite3
+
+# OS Files
+.DS_Store
+Thumbs.db

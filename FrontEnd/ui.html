@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Document Assistant</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+
+/* AUTH */
+#auth-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+.auth-card { background:#fff; border-radius:12px; border:1px solid #e5e5e5; padding:32px; width:100%; max-width:400px; }
+.auth-card h1 { font-size:20px; font-weight:600; margin-bottom:4px; }
+.auth-card p { font-size:14px; color:#666; margin-bottom:24px; }
+.tabs { display:flex; border-bottom:1px solid #e5e5e5; margin-bottom:20px; }
+.tab { flex:1; padding:10px; text-align:center; cursor:pointer; font-size:14px; color:#666; border:none; border-bottom:2px solid transparent; background:none; }
+.tab.active { color:#2563eb; border-bottom-color:#2563eb; font-weight:500; }
+.field { margin-bottom:14px; }
+.field label { display:block; font-size:13px; color:#444; margin-bottom:5px; font-weight:500; }
+.field input { width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; outline:none; }
+.field input:focus { border-color:#2563eb; }
+.btn-full { width:100%; padding:10px; background:#2563eb; color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; }
+.auth-msg { margin-top:12px; font-size:13px; text-align:center; padding:8px; border-radius:6px; display:none; }
+.auth-msg.err { background:#fef2f2; color:#dc2626; display:block; }
+.auth-msg.ok  { background:#f0fdf4; color:#16a34a; display:block; }
+
+/* APP */
+#app-screen { display:none; height:100vh; flex-direction:column; }
+.topbar { background:#fff; border-bottom:1px solid #e5e5e5; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
+.topbar h1 { font-size:16px; font-weight:600; }
+.user-row { display:flex; align-items:center; gap:10px; font-size:13px; color:#555; }
+.layout { display:flex; flex:1; overflow:hidden; }
+.sidebar { width:175px; background:#fff; border-right:1px solid #e5e5e5; padding:12px 8px; display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
+.nav-btn { display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:8px; border:none; background:none; font-size:13px; color:#555; cursor:pointer; width:100%; text-align:left; }
+.nav-btn:hover { background:#f5f5f5; }
+.nav-btn.active { background:#eff6ff; color:#2563eb; font-weight:500; }
+.main { flex:1; overflow-y:auto; padding:20px; }
+.panel { display:none; max-width:760px; }
+.panel.active { display:block; }
+.ptitle { font-size:18px; font-weight:600; margin-bottom:16px; }
+.card { background:#fff; border:1px solid #e5e5e5; border-radius:10px; padding:18px; margin-bottom:14px; }
+.card h3 { font-size:14px; font-weight:600; margin-bottom:14px; color:#333; }
+.sbtn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; border:none; font-size:13px; font-weight:500; cursor:pointer; }
+.sbtn.blue  { background:#2563eb; color:#fff; }
+.sbtn.blue:hover { background:#1d4ed8; }
+.sbtn.gray  { background:#fff; color:#333; border:1px solid #ddd; }
+.sbtn.gray:hover { background:#f5f5f5; }
+.sbtn.red   { background:#dc2626; color:#fff; }
+.sbtn.red:hover { background:#b91c1c; }
+.sbtn.sm    { padding:5px 12px; font-size:12px; }
+.res { margin-top:12px; background:#f8f8f8; border:1px solid #e5e5e5; border-radius:8px; padding:12px; font-size:12px; font-family:monospace; white-space:pre-wrap; max-height:200px; overflow-y:auto; display:none; }
+.res.show { display:block; }
+.res.ok  { border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+.res.err { border-color:#fecaca; background:#fef2f2; color:#991b1b; }
+
+/* CHAT */
+.chat-wrap { border:1px solid #e5e5e5; border-radius:10px; overflow:hidden; }
+.chat-msgs { min-height:300px; max-height:380px; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; background:#fafafa; }
+.msg { max-width:80%; padding:10px 14px; border-radius:10px; font-size:14px; line-height:1.5; }
+.msg.user { background:#2563eb; color:#fff; align-self:flex-end; border-bottom-right-radius:3px; }
+.msg.bot  { background:#fff; border:1px solid #e5e5e5; align-self:flex-start; border-bottom-left-radius:3px; }
+.msg.streaming { background:#fff; border:1px solid #dbeafe; color:#1e40af; align-self:flex-start; border-bottom-left-radius:3px; }
+.chat-footer { background:#fff; border-top:1px solid #e5e5e5; padding:10px 12px; display:flex; gap:8px; }
+.chat-footer input { flex:1; padding:9px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; outline:none; }
+.chat-footer input:focus { border-color:#2563eb; }
+.sources-bar { display:flex; flex-wrap:wrap; gap:6px; padding:8px 14px; background:#f8f8f8; border-top:1px solid #e5e5e5; }
+.stag { font-size:11px; padding:3px 8px; background:#eff6ff; color:#1d4ed8; border-radius:99px; border:1px solid #dbeafe; }
+.mode-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.mode-toggle { display:flex; border:1px solid #ddd; border-radius:8px; overflow:hidden; }
+.mbtn { padding:7px 16px; font-size:13px; border:none; background:none; cursor:pointer; color:#555; }
+.mbtn.active { background:#2563eb; color:#fff; }
+.session-bar { font-size:12px; color:#888; margin-top:10px; padding:6px 10px; background:#f5f5f5; border-radius:6px; font-family:monospace; }
+
+/* DOCS */
+.doc-row { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px solid #e5e5e5; border-radius:8px; margin-bottom:8px; background:#fff; }
+.doc-name { font-size:13px; font-weight:500; }
+.badge { font-size:11px; padding:3px 9px; border-radius:99px; background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+.del-btn { padding:4px 10px; font-size:12px; color:#dc2626; border:1px solid #fecaca; border-radius:6px; background:none; cursor:pointer; }
+.del-btn:hover { background:#fef2f2; }
+.empty { text-align:center; padding:32px; color:#888; font-size:13px; }
+.prog { margin-top:10px; font-size:13px; color:#2563eb; display:none; }
+input[type=file] { width:100%; padding:8px; border:1px solid #ddd; border-radius:8px; font-size:13px; }
+.ti { width:100%; padding:9px 12px; border:1px solid #ddd; border-radius:8px; font-size:14px; outline:none; margin-bottom:10px; }
+.ti:focus { border-color:#2563eb; }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <h1>🤖 AI Document Assistant</h1>
+    <p>RAG-powered PDF question answering</p>
+    <div class="tabs">
+      <button class="tab active" id="tab-signin-btn">Sign in</button>
+      <button class="tab" id="tab-signup-btn">Sign up</button>
+    </div>
+    <div id="tab-signin">
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com" /></div>
+      <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" /></div>
+      <button class="btn-full" id="login-btn">Sign in</button>
+    </div>
+    <div id="tab-signup" style="display:none">
+      <div class="field"><label>Name</label><input type="text" id="reg-name" placeholder="Your name" /></div>
+      <div class="field"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com" /></div>
+      <div class="field"><label>Password</label><input type="password" id="reg-pass" placeholder="min 6 characters" /></div>
+      <button class="btn-full" id="register-btn">Create account</button>
+    </div>
+    <div id="auth-msg" class="auth-msg"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="topbar">
+    <h1>🤖 AI Document Assistant</h1>
+    <div class="user-row">
+      <span id="user-label"></span>
+      <button class="sbtn gray sm" id="logout-btn">Sign out</button>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sidebar">
+      <button class="nav-btn active" data-panel="upload">📤 Upload</button>
+      <button class="nav-btn" data-panel="documents">📁 Documents</button>
+      <button class="nav-btn" data-panel="chat">💬 Chat</button>
+      <button class="nav-btn" data-panel="history">🕐 History</button>
+      <button class="nav-btn" data-panel="health">❤️ Health</button>
+    </div>
+    <div class="main">
+
+      <!-- UPLOAD -->
+      <div id="panel-upload" class="panel active">
+        <div class="ptitle">Upload PDFs</div>
+        <div class="card">
+          <h3>Select one or more PDF files</h3>
+          <input type="file" id="upload-files" accept=".pdf" multiple />
+          <div class="prog" id="upload-prog">⏳ Processing... please wait</div>
+          <br/><br/>
+          <button class="sbtn blue" id="upload-btn">⬆ Upload & Process</button>
+          <div id="upload-res" class="res"></div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS -->
+      <div id="panel-documents" class="panel">
+        <div class="ptitle">Uploaded Documents</div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="margin:0">Your documents</h3>
+            <button class="sbtn gray sm" id="refresh-docs-btn">↻ Refresh</button>
+          </div>
+          <div id="docs-list"><div class="empty">Loading...</div></div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div id="panel-chat" class="panel">
+        <div class="ptitle">Chat with your documents</div>
+        <div class="card" style="padding-bottom:0">
+          <div class="mode-row">
+            <div class="mode-toggle">
+              <button class="mbtn active" id="mbtn-normal">Normal</button>
+              <button class="mbtn" id="mbtn-stream">Stream ⚡</button>
+            </div>
+            <button class="sbtn gray sm" id="new-session-btn">+ New session</button>
+          </div>
+          <div class="chat-wrap">
+            <div class="chat-msgs" id="chat-msgs">
+              <div class="empty" id="chat-empty">Upload a PDF then ask questions — searches all documents automatically</div>
+            </div>
+            <div id="sources-bar" class="sources-bar" style="display:none"></div>
+            <div class="chat-footer">
+              <input type="text" id="chat-input" placeholder="Ask anything about your documents..." />
+              <button class="sbtn blue" id="send-btn">Send</button>
+            </div>
+          </div>
+          <div class="session-bar" id="session-bar">Session: —</div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div id="panel-history" class="panel">
+        <div class="ptitle">Chat History</div>
+        <div class="card">
+          <h3>Session history</h3>
+          <input type="text" class="ti" id="hist-session" placeholder="Session ID (auto-filled from chat)" />
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="sbtn blue" id="get-hist-btn">Get history</button>
+            <button class="sbtn gray" id="list-sessions-btn">All sessions</button>
+            <button class="sbtn red" id="clear-hist-btn">Clear</button>
+          </div>
+          <div id="hist-res" class="res"></div>
+        </div>
+      </div>
+
+      <!-- HEALTH -->
+      <div id="panel-health" class="panel">
+        <div class="ptitle">Health Check</div>
+        <div class="card">
+          <h3>Server status</h3>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="sbtn blue" id="health-root-btn">GET /</button>
+            <button class="sbtn gray" id="health-btn">GET /health</button>
+          </div>
+          <div id="health-res" class="res"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = 'http://localhost:8000';
+let token = '';
+let userName = '';
+let sessionId = 'session_' + Date.now();
+let chatMode = 'normal';
+
+// ── Restore session ──────────────────────────────────────────────────────────
+const savedToken = sessionStorage.getItem('rag_token');
+const savedName  = sessionStorage.getItem('rag_name');
+if (savedToken && savedName) {
+  token = savedToken;
+  userName = savedName;
+  bootApp();
+}
+
+updateSessionBar();
+
+// ── Auth tab switch ──────────────────────────────────────────────────────────
+document.getElementById('tab-signin-btn').addEventListener('click', function() {
+  document.getElementById('tab-signin').style.display = 'block';
+  document.getElementById('tab-signup').style.display = 'none';
+  document.getElementById('tab-signin-btn').classList.add('active');
+  document.getElementById('tab-signup-btn').classList.remove('active');
+  clearAuthMsg();
+});
+
+document.getElementById('tab-signup-btn').addEventListener('click', function() {
+  document.getElementById('tab-signin').style.display = 'none';
+  document.getElementById('tab-signup').style.display = 'block';
+  document.getElementById('tab-signup-btn').classList.add('active');
+  document.getElementById('tab-signin-btn').classList.remove('active');
+  clearAuthMsg();
+});
+
+// ── Auth actions ─────────────────────────────────────────────────────────────
+document.getElementById('login-btn').addEventListener('click', login);
+document.getElementById('register-btn').addEventListener('click', register);
+document.getElementById('logout-btn').addEventListener('click', logout);
+
+document.getElementById('login-pass').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); login(); }
+});
+document.getElementById('reg-pass').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); register(); }
+});
+
+function showAuthMsg(msg, type) {
+  const el = document.getElementById('auth-msg');
+  el.textContent = msg;
+  el.className = 'auth-msg ' + type;
+}
+function clearAuthMsg() {
+  document.getElementById('auth-msg').className = 'auth-msg';
+}
+
+async function register() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-pass').value;
+  if (!name || !email || !pass) return showAuthMsg('All fields required.', 'err');
+  if (pass.length < 6) return showAuthMsg('Password min 6 characters.', 'err');
+  const r = await fetch(BASE + '/auth/register', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password: pass })
+  });
+  const d = await r.json();
+  if (r.ok) {
+    showAuthMsg('Account created! Sign in now.', 'ok');
+    document.getElementById('tab-signin-btn').click();
+    document.getElementById('login-email').value = email;
+  } else showAuthMsg(d.detail || 'Registration failed.', 'err');
+}
+
+async function login() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  if (!email || !pass) return showAuthMsg('Email and password required.', 'err');
+  const form = new URLSearchParams();
+  form.append('username', email);
+  form.append('password', pass);
+  const r = await fetch(BASE + '/auth/login', { method: 'POST', body: form });
+  const d = await r.json();
+  if (r.ok) {
+    token = d.access_token;
+    userName = d.name;
+    sessionStorage.setItem('rag_token', token);
+    sessionStorage.setItem('rag_name', userName);
+    bootApp();
+  } else showAuthMsg(d.detail || 'Login failed.', 'err');
+}
+
+function bootApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.flexDirection = 'column';
+  document.getElementById('app-screen').style.height = '100vh';
+  document.getElementById('user-label').textContent = 'Hi, ' + userName + ' 👋';
+}
+
+function logout() {
+  token = ''; userName = '';
+  sessionStorage.removeItem('rag_token');
+  sessionStorage.removeItem('rag_name');
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const panel = btn.getAttribute('data-panel');
+    document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.getElementById('panel-' + panel).classList.add('active');
+    btn.classList.add('active');
+    if (panel === 'documents') loadDocs();
+  });
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function ah() { return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }; }
+function ahForm() { return { 'Authorization': 'Bearer ' + token }; }
+
+function setRes(id, data, ok) {
+  const el = document.getElementById(id);
+  el.textContent = JSON.stringify(data, null, 2);
+  el.className = 'res show ' + (ok ? 'ok' : 'err');
+}
+
+// ── Upload ────────────────────────────────────────────────────────────────────
+document.getElementById('upload-btn').addEventListener('click', async function() {
+  const files = document.getElementById('upload-files').files;
+  if (!files.length) return setRes('upload-res', { error: 'Select at least one PDF.' }, false);
+  const prog = document.getElementById('upload-prog');
+  prog.style.display = 'block';
+  const form = new FormData();
+  for (const f of files) form.append('files', f);
+  const r = await fetch(BASE + '/documents/upload', { method: 'POST', headers: ahForm(), body: form });
+  prog.style.display = 'none';
+  setRes('upload-res', await r.json(), r.ok);
+});
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+document.getElementById('refresh-docs-btn').addEventListener('click', loadDocs);
+
+async function loadDocs() {
+  const r = await fetch(BASE + '/documents/', { headers: ah() });
+  const d = await r.json();
+  const list = document.getElementById('docs-list');
+  if (!r.ok || !d.documents || d.documents.length === 0) {
+    list.innerHTML = '<div class="empty">No documents uploaded yet.</div>'; return;
+  }
+  list.innerHTML = d.documents.map(function(doc) {
+    return '<div class="doc-row"><div class="doc-name">📄 ' + doc.doc_id + '</div>' +
+      '<div style="display:flex;gap:10px;align-items:center;"><span class="badge">ready</span>' +
+      '<button class="del-btn" data-id="' + doc.doc_id + '">Delete</button></div></div>';
+  }).join('');
+  list.querySelectorAll('.del-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { deleteDoc(btn.getAttribute('data-id')); });
+  });
+}
+
+async function deleteDoc(docId) {
+  if (!confirm('Delete "' + docId + '"?')) return;
+  const r = await fetch(BASE + '/documents/' + docId, { method: 'DELETE', headers: ah() });
+  if (r.ok) loadDocs();
+}
+
+// ── Chat mode ─────────────────────────────────────────────────────────────────
+document.getElementById('mbtn-normal').addEventListener('click', function() {
+  chatMode = 'normal';
+  document.getElementById('mbtn-normal').classList.add('active');
+  document.getElementById('mbtn-stream').classList.remove('active');
+});
+document.getElementById('mbtn-stream').addEventListener('click', function() {
+  chatMode = 'stream';
+  document.getElementById('mbtn-stream').classList.add('active');
+  document.getElementById('mbtn-normal').classList.remove('active');
+});
+
+// ── New session ───────────────────────────────────────────────────────────────
+document.getElementById('new-session-btn').addEventListener('click', function() {
+  sessionId = 'session_' + Date.now();
+  document.getElementById('chat-msgs').innerHTML = '<div class="empty" id="chat-empty">Upload a PDF then ask questions — searches all documents automatically</div>';
+  document.getElementById('sources-bar').style.display = 'none';
+  updateSessionBar();
+});
+
+function updateSessionBar() {
+  document.getElementById('session-bar').textContent = 'Session: ' + sessionId;
+  document.getElementById('hist-session').value = sessionId;
+}
+
+// ── Send message ──────────────────────────────────────────────────────────────
+document.getElementById('send-btn').addEventListener('click', function() {
+  sendMessage();
+});
+
+document.getElementById('chat-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    e.stopPropagation();
+    sendMessage();
+  }
+});
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+
+  const empty = document.getElementById('chat-empty');
+  if (empty) empty.remove();
+
+  addMsg('user', q);
+  document.getElementById('sources-bar').style.display = 'none';
+
+  const body = JSON.stringify({ question: q, doc_id: null, session_id: sessionId });
+
+  if (chatMode === 'normal') {
+    const placeholder = addMsg('bot', '...');
+    const r = await fetch(BASE + '/chat/ask', { method: 'POST', headers: ah(), body: body });
+    const d = await r.json();
+    if (r.ok) {
+      placeholder.textContent = d.answer;
+      showSources(d.sources);
+    } else {
+      placeholder.textContent = 'Error: ' + (d.detail || 'Something went wrong');
+      placeholder.style.color = '#dc2626';
+    }
+  } else {
+    const streamDiv = addMsg('streaming', '');
+    let full = '';
+    try {
+      const r = await fetch(BASE + '/chat/ask/stream', { method: 'POST', headers: ah(), body: body });
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value).split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const tok = line.slice(6);
+          if (tok === '[DONE]') { streamDiv.className = 'msg bot'; break; }
+          if (tok.startsWith('[ERROR]')) { streamDiv.textContent = tok; break; }
+          full += tok;
+          streamDiv.textContent = full;
+          document.getElementById('chat-msgs').scrollTop = 99999;
+        }
+      }
+    } catch(e) {
+      streamDiv.textContent = 'Stream error: ' + e.message;
+    }
+  }
+}
+
+function addMsg(role, text) {
+  const box = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
+}
+
+function showSources(sources) {
+  const bar = document.getElementById('sources-bar');
+  if (!sources || !sources.length) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = '<span style="font-size:11px;color:#888;margin-right:4px;">Sources:</span>' +
+    sources.map(function(s) {
+      return '<span class="stag">📄 ' + s.source_file + ' — p.' + s.page_num + ' (' + s.score + ')</span>';
+    }).join('');
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+document.getElementById('get-hist-btn').addEventListener('click', async function() {
+  const sid = document.getElementById('hist-session').value.trim();
+  if (!sid) return;
+  const r = await fetch(BASE + '/history/' + sid, { headers: ah() });
+  setRes('hist-res', await r.json(), r.ok);
+});
+
+document.getElementById('list-sessions-btn').addEventListener('click', async function() {
+  const r = await fetch(BASE + '/history/', { headers: ah() });
+  setRes('hist-res', await r.json(), r.ok);
+});
+
+document.getElementById('clear-hist-btn').addEventListener('click', async function() {
+  const sid = document.getElementById('hist-session').value.trim();
+  if (!sid || !confirm('Clear history for ' + sid + '?')) return;
+  const r = await fetch(BASE + '/history/' + sid, { method: 'DELETE', headers: ah() });
+  setRes('hist-res', await r.json(), r.ok);
+});
+
+// ── Health ────────────────────────────────────────────────────────────────────
+document.getElementById('health-root-btn').addEventListener('click', async function() {
+  const r = await fetch(BASE + '/');
+  setRes('health-res', await r.json(), r.ok);
+});
+document.getElementById('health-btn').addEventListener('click', async function() {
+  const r = await fetch(BASE + '/health');
+  setRes('health-res', await r.json(), r.ok);
+});
+</script>
+</body>
+</html>

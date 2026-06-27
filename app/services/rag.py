@@ -53,7 +53,7 @@ MAX_HISTORY_TURNS = 10   # keep last N turns to avoid context overflow
 def answer_question(
     question: str,
     session_id: str,
-    doc_id:   None,
+    doc_id: str | None = None,
     top_k: int = 5,
 ) -> dict:
     """
