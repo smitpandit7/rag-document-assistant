@@ -1,26 +1,22 @@
-# Virtual Environment
-venv/
+# Database
+users.db
+*.db
 
-# Environment Variables
+# ChromaDB
+chroma_db/
+
+# Environment
 .env
+venv/
+.venv/
 
-# Python Cache
+# Python
 __pycache__/
-*.py[cod]
-
-# VS Code
-.vscode/
+*.pyc
 
 # Logs
 logs/
 *.log
 
-# ChromaDB Database
-chroma_db/
-
-# Uploaded PDFs
-uploads/
-
-# OS Files
-.DS_Store
-Thumbs.db
+# VS Code
+.vscode/

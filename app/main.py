@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app.core import config
 from app.core.logger import get_logger
-from app.routes import upload, chat, history
+from app.core.database import init_db
+from app.routes import upload, chat, history, auth
 
 logger = get_logger(__name__)
 
@@ -14,7 +15,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# ── CORS ───────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,32 +22,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routers ────────────────────────────────────────────────────────────────
+app.include_router(auth.router)
 app.include_router(upload.router)
 app.include_router(chat.router)
 app.include_router(history.router)
 
 
-# ── Fix Swagger UI for multi-file upload ───────────────────────────────────
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
-
     schema = get_openapi(
         title=app.title,
         version=app.version,
         description=app.description,
         routes=app.routes,
     )
-
-    # Fix the upload endpoint so Swagger shows a proper multi-file picker
     try:
         upload_schema = schema["paths"]["/documents/upload"]["post"]
         upload_schema["requestBody"]["content"]["multipart/form-data"]["schema"] = {
             "type": "object",
             "properties": {
                 "files": {
-                    "type":  "array",
+                    "type": "array",
                     "items": {"type": "string", "format": "binary"},
                 }
             },
@@ -56,6 +52,18 @@ def custom_openapi():
     except KeyError:
         pass
 
+    schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    }
+    for path, methods in schema["paths"].items():
+        for method, operation in methods.items():
+            if not path.startswith("/auth") and path not in ["/", "/health"]:
+                operation["security"] = [{"BearerAuth": []}]
+
     app.openapi_schema = schema
     return app.openapi_schema
 
@@ -63,36 +71,19 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-# ── Startup ────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
     logger.info("Starting AI Document Assistant...")
-
+    init_db()
     if not config.GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY is missing. Add it to your .env file.")
-
-    from pathlib import Path
-    for d in [config.UPLOAD_DIR, config.CHROMA_DB_PATH, config.LOG_DIR]:
-        Path(d).mkdir(parents=True, exist_ok=True)
-
+        raise RuntimeError("GROQ_API_KEY is missing.")
     logger.info("All systems ready.")
 
 
-# ── Health ─────────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
 def root():
-    return {
-        "status":  "ok",
-        "app":     "AI Document Assistant",
-        "version": "1.0.0",
-        "docs":    "/docs",
-    }
-
+    return {"status": "ok", "app": "AI Document Assistant", "docs": "/docs"}
 
 @app.get("/health", tags=["Health"])
 def health():
-    return {
-        "status":    "healthy",
-        "model":     config.GROQ_MODEL,
-        "embedding": config.EMBEDDING_MODEL,
-    }
+    return {"status": "healthy", "model": config.GROQ_MODEL}
