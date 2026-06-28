@@ -36,7 +36,7 @@ The system allows users to:
 
 ## Architecture
 
-![Architecture Diagram](Architecture-1.png)
+![Architecture Diagram](Architecture.png)
 
 ```
 User
