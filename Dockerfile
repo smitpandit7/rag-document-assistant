@@ -1,28 +1,22 @@
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies needed by PyMuPDF and other packages
+# System dependencies for PyMuPDF and chromadb
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+    gcc g++ && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (layer caching — reinstall only if requirements change)
+# Install dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the project
+# Copy project
 COPY . .
 
-# Create necessary directories
+# Create folders
 RUN mkdir -p uploads chroma_db logs
 
-# Expose port
 EXPOSE 8000
 
-# Run the app
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -36,6 +36,8 @@ The system allows users to:
 
 ## Architecture
 
+![Architecture Diagram](Architecture-1.png)
+
 ```
 User
  │
@@ -150,7 +152,7 @@ rag-document-assistant/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/rag-document-assistant.git
+git clone https://github.com/smitpandit7/rag-document-assistant.git
 cd rag-document-assistant
 ```
 
@@ -340,7 +342,7 @@ This tests all 7 steps: PDF extraction → chunking → embedding → ChromaDB s
 
 ## Screen Recording
 
-📹 [Link to screen recording](#) ← add your link here before submitting
+📹 https://drive.google.com/file/d/1z_oyWWJMOTnqfdchdsniR2wgGFw7wZS1/view?usp=sharing
 
 ---
 

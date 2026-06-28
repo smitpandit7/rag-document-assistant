@@ -1,27 +1,3 @@
-"""
-rag.py — Core RAG (Retrieval-Augmented Generation) Pipeline ⭐⭐⭐
-
-Flow:
-    User Question
-        │
-        ▼
-    embed_single(question)          ← embedding.py
-        │
-        ▼
-    query_chunks(embedding, doc_id) ← vector_store.py
-        │
-        ▼
-    Build prompt with retrieved context + chat history
-        │
-        ▼
-    Call Groq API (LLaMA 3.3 70B)
-        │
-        ▼
-    Parse answer + extract source references
-        │
-        ▼
-    Return { answer, sources, session_id }
-"""
 
 from groq import Groq
 from app.core.config import GROQ_API_KEY, GROQ_MODEL
@@ -31,24 +7,14 @@ from app.services.vector_store import query_chunks
 
 logger = get_logger(__name__)
 
-# ---------------------------------------------------------------------------
-# Groq client — initialised once at module load
-# ---------------------------------------------------------------------------
 
 _groq_client = Groq(api_key=GROQ_API_KEY)
 
-# ---------------------------------------------------------------------------
-# In-memory chat history store
-# Structure: { session_id: [ {"role": "user"|"assistant", "content": str}, ... ] }
-# ---------------------------------------------------------------------------
 _chat_history: dict[str, list[dict]] = {}
 
 MAX_HISTORY_TURNS = 10   # keep last N turns to avoid context overflow
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
 
 def answer_question(
     question: str,
@@ -56,25 +22,7 @@ def answer_question(
     doc_id: str | None = None,
     top_k: int = 5,
 ) -> dict:
-    """
-    Main RAG entry point. Given a question, retrieves relevant chunks
-    and generates a grounded answer via Groq (LLaMA 3.3 70B).
-
-    Args:
-        question:   The user's natural-language question.
-        session_id: Unique ID for this conversation (for chat history).
-        doc_id:     If provided, restrict retrieval to this document.
-                    If None, search across all documents.
-        top_k:      Number of context chunks to retrieve.
-
-    Returns:
-        {
-            "answer":     str,          # Groq's answer
-            "sources":    list[dict],   # retrieved chunks used as context
-            "session_id": str,
-            "doc_id":     str | None,
-        }
-    """
+    
     if not question or not question.strip():
         raise ValueError("Question cannot be empty.")
 

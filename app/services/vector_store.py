@@ -5,9 +5,7 @@ from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-# ---------------------------------------------------------------------------
-# ChromaDB client — singleton, persistent on disk at settings.CHROMA_DB_PATH
-# ---------------------------------------------------------------------------
+
 
 _client: chromadb.ClientAPI | None = None
 
